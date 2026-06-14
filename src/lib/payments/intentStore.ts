@@ -6,6 +6,9 @@ export type PaymentIntent = {
     token: string;
     chainId: number;
     paymentAddress: string;
+    payer: string;
+    txHash?: string;
+    paidAt?: string;
     privateKeyDevOnly: string;
     status: "pending" | "paid" | "expired";
     createdAt: string;
