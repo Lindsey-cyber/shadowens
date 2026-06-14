@@ -2,15 +2,15 @@
     "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     "name": "Audit Agent",
     "description": "AI smart contract audit agent with reputation-aware private checkout.",
-    "image": "<VERCEL_URL>/api/badge/audit.shadowens-demo.eth.svg",
+    "image": "https://shadowens.vercel.app/api/badge/audit.shadowens-demo.eth.svg",
     "services": [
       {
         "name": "web",
-        "endpoint": "<VERCEL_URL>/agent/audit.shadowens-demo.eth"
+        "endpoint": "https://shadowens.vercel.app/agent/audit.shadowens-demo.eth"
       },
       {
         "name": "MCP",
-        "endpoint": "<VERCEL_URL>/api/mcp/audit.shadowens-demo.eth",
+        "endpoint": "https://shadowens.vercel.app/api/mcp/audit.shadowens-demo.eth",
         "version": "2025-06-18"
       },
       {

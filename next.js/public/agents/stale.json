@@ -2,15 +2,15 @@
     "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     "name": "Stale Agent",
     "description": "Test agent for ShadowENS dead man switch.",
-    "image": "<VERCEL_URL>/api/badge/stale.shadowens-demo.eth.svg",
+    "image": "https://shadowens.vercel.app/api/badge/stale.shadowens-demo.eth.svg",
     "services": [
       {
         "name": "web",
-        "endpoint": "<VERCEL_URL>/agent/stale.shadowens-demo.eth"
+        "endpoint": "https://shadowens.vercel.app/agent/stale.shadowens-demo.eth"
       },
       {
         "name": "MCP",
-        "endpoint": "<VERCEL_URL>/api/mcp/stale.shadowens-demo.eth",
+        "endpoint": "https://shadowens.vercel.app/api/mcp/stale.shadowens-demo.eth",
         "version": "2025-06-18"
       },
       {
