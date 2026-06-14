@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { base } from "wagmi/chains";
 
 type ResolveResponse = {
   ok: boolean;
@@ -44,7 +46,17 @@ type ResolveResponse = {
   error?: string;
 };
 
+const WALLET_B = "0xD0314CfcDC5109b87a338500245Eb6B7203F3749";
+
 export default function AgentClient({ name }: { name: string }) {
+  const { address, isConnected, chainId } = useAccount();
+  const { connectors, connect, isPending: connectPending } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { switchChain, isPending: switchPending } = useSwitchChain();
+
+  const connectedToWalletB =
+    address?.toLowerCase() === WALLET_B.toLowerCase();
+
   const [data, setData] = useState<ResolveResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -79,6 +91,35 @@ export default function AgentClient({ name }: { name: string }) {
     setCheckoutResult(null);
 
     try {
+      if (!isConnected || !address) {
+        setCheckoutResult({
+          ok: false,
+          error: "wallet-not-connected",
+          expectedWallet: WALLET_B,
+        });
+        return;
+      }
+
+      if (!connectedToWalletB) {
+        setCheckoutResult({
+          ok: false,
+          error: "wrong-wallet-connected",
+          connectedAddress: address,
+          expectedWallet: WALLET_B,
+        });
+        return;
+      }
+
+      if (chainId !== base.id) {
+        setCheckoutResult({
+          ok: false,
+          error: "wrong-chain",
+          connectedChainId: chainId,
+          expectedChainId: base.id,
+        });
+        return;
+      }
+
       const res = await fetch("/api/checkout/create", {
         method: "POST",
         headers: {
@@ -89,6 +130,7 @@ export default function AgentClient({ name }: { name: string }) {
           amount: "5",
           token: "USDC",
           chainId: 8453,
+          payer: address,
         }),
       });
 
@@ -117,6 +159,52 @@ export default function AgentClient({ name }: { name: string }) {
       <section className="hero">
         <div className="kicker">ENS Agent Passport</div>
         <h1>{name}</h1>
+
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Wallet B</h2>
+
+          {!isConnected ? (
+            <>
+              <p>Expected payer wallet: {WALLET_B}</p>
+              <button
+                className="button"
+                disabled={connectPending || connectors.length === 0}
+                onClick={() => connect({ connector: connectors[0] })}
+              >
+                {connectPending ? "Connecting..." : "Connect Wallet B"}
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Connected wallet: {address}</p>
+              <p>
+                Wallet B match:{" "}
+                <span className={connectedToWalletB ? "badge" : "badge warning"}>
+                  {connectedToWalletB ? "yes" : "no"}
+                </span>
+              </p>
+              <p>Connected chainId: {chainId ?? "unknown"}</p>
+
+              {chainId !== base.id ? (
+                <button
+                  className="button"
+                  disabled={switchPending}
+                  onClick={() => switchChain({ chainId: base.id })}
+                >
+                  {switchPending ? "Switching..." : "Switch to Base"}
+                </button>
+              ) : null}
+
+              <button
+                className="button"
+                style={{ marginLeft: 12 }}
+                onClick={() => disconnect()}
+              >
+                Disconnect
+              </button>
+            </>
+          )}
+        </div>        
 
         {loading && <p>Resolving ENS records...</p>}
 
@@ -177,6 +265,9 @@ export default function AgentClient({ name }: { name: string }) {
                   className="button"
                   disabled={
                     checkoutLoading ||
+                    !isConnected ||
+                    !connectedToWalletB ||
+                    chainId !== base.id ||
                     data.checkoutMode?.mode !== "direct-private-checkout"
                   }
                   onClick={createCheckout}

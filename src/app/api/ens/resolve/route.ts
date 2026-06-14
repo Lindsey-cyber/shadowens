@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { computeCheckoutMode } from "@/lib/ens/checkoutMode";
 import { computeHeartbeatStatus } from "@/lib/ens/heartbeat";
 import { resolveEnsAgent } from "@/lib/ens/resolveAgent";
-import { getMockReputation } from "@/lib/reputation/mock";
+import { getBigQueryReputation } from "@/lib/reputation/bigquery";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   });
 
   const agentId = resolved.records.agentContext.registry.agentId;
-  const reputation = getMockReputation(agentId);
+  const reputation = await getBigQueryReputation(agentId);
 
   const checkoutMode = computeCheckoutMode({
     heartbeatAllowed: heartbeat.checkoutAllowed,

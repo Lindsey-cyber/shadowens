@@ -1,24 +1,27 @@
 {
-    "name": "shadowens",
-    "version": "0.1.0",
-    "private": true,
-    "scripts": {
-      "dev": "next dev",
-      "build": "next build",
-      "start": "next start"
-    },
-    "dependencies": {
-      "ethers": "^6.13.4",
-      "next": "14.2.30",
-      "react": "18.3.1",
-      "react-dom": "18.3.1",
-      "viem": "^2.21.55",
-      "zod": "^3.23.8"
-    },
-    "devDependencies": {
-      "@types/node": "^20.17.10",
-      "@types/react": "^18.3.12",
-      "@types/react-dom": "^18.3.1",
-      "typescript": "^5.6.3"
-    }
+  "name": "shadowens",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^8.3.1",
+    "@tanstack/react-query": "^5.101.0",
+    "ethers": "^6.13.4",
+    "next": "14.2.30",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "viem": "^2.21.55",
+    "wagmi": "^2.19.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
   }
+}

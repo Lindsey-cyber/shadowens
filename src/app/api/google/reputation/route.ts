@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMockReputation } from "@/lib/reputation/mock";
+import { getBigQueryReputation } from "@/lib/reputation/bigquery";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const agentId = req.nextUrl.searchParams.get("agentId");
@@ -13,11 +14,18 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const reputation = getMockReputation(agentId);
+  try {
+    const reputation = await getBigQueryReputation(agentId);
+    return NextResponse.json(reputation);
+  } catch (error) {
+    console.error("google reputation failed", error);
 
-  if (!reputation) {
-    return NextResponse.json(null, { status: 404 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "unknown-error",
+      },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(reputation);
 }
