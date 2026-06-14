@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getAddress } from "viem";
-
+import { getAgentTreasuryAddress } from "@/lib/agents/treasury";
 import { computeCheckoutMode } from "@/lib/ens/checkoutMode";
 import { computeHeartbeatStatus } from "@/lib/ens/heartbeat";
 import { resolveEnsAgent } from "@/lib/ens/resolveAgent";
@@ -169,6 +169,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ephemeral = createEphemeralAddress();
+  const agentTreasury = getAgentTreasuryAddress(ensName);
 
   const now = new Date();
   const intentTtlSeconds = Number(
@@ -189,7 +190,9 @@ export async function POST(req: NextRequest) {
     payer: sigCheck.payer,
     checkoutName,
     paymentAddress: ephemeral.address,
+    agentTreasury,
     privateKeyDevOnly: ephemeral.privateKey,
+    settlementStatus: "not-started",
     status: "pending",
     createdAt: now.toISOString(),
     expiresAt: intentExpiresAt.toISOString(),

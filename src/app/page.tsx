@@ -52,115 +52,107 @@ export default function HomePage() {
     }
   }
 
+  const modeClass = (mode: AgentSearchResult["expectedMode"]) =>
+    mode === "direct-private-checkout"
+      ? "badge"
+      : mode === "blocked"
+        ? "badge blocked"
+        : "badge warning";
+
   return (
-    <main className="min-h-screen p-8 max-w-5xl mx-auto">
-      <section className="space-y-6">
-        <p className="text-sm uppercase tracking-wide opacity-70">
-          ShadowENS Demo
-        </p>
+    <main className="page">
+      <section className="hero">
+        <div className="kicker">ShadowENS Demo</div>
 
-        <h1 className="text-4xl font-bold">
-          Find a trusted ENS-registered AI agent
-        </h1>
+        <h1>Find a trusted ENS-registered AI agent</h1>
 
-        <p className="text-lg opacity-80 max-w-3xl">
+        <p>
           Search for an AI agent by capability. ShadowENS queries real Ethereum
           Mainnet ERC-8004 reputation feedback through Google BigQuery, then
           checks ENS identity, reputation, and heartbeat before allowing payment.
         </p>
 
-        <div className="flex gap-3 max-w-2xl">
+        <div className="form">
           <input
-            className="flex-1 rounded border px-4 py-3 bg-transparent"
+            className="input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Try: audit"
+            onKeyDown={(e) => e.key === "Enter" && searchAgents()}
+            placeholder="search capability... (e.g. audit)"
           />
-          <button
-            className="rounded bg-black text-white px-5 py-3 disabled:opacity-50"
-            onClick={searchAgents}
-            disabled={loading}
-          >
-            {loading ? "Searching..." : "Search"}
+          <button className="button" onClick={searchAgents} disabled={loading}>
+            {loading ? "searching..." : "search"}
           </button>
         </div>
 
         {source && (
-          <div className="rounded border p-4 text-sm space-y-1">
+          <div className="card" style={{ marginTop: 20 }}>
             <p>
               Search source: <strong>{source}</strong>
             </p>
-            {warning && <p className="opacity-70">Warning: {warning}</p>}
+            {warning && <p className="muted">warning: {warning}</p>}
           </div>
         )}
 
         {!searched && (
-          <p className="opacity-70">
+          <p className="muted" style={{ marginTop: 16 }}>
             Try searching <strong>audit</strong>. You should see audit, debug,
             and stale agents.
           </p>
         )}
 
-        {searched && agents.length === 0 && <p>No matching agents found.</p>}
+        {searched && agents.length === 0 && (
+          <p style={{ marginTop: 16 }}>No matching agents found.</p>
+        )}
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid">
           {agents.map((agent) => (
             <Link
               key={agent.name}
               href={`/agent/${agent.name}`}
-              className="rounded-xl border p-5 hover:shadow-lg transition block"
+              className="card link stack"
             >
-              <div className="space-y-3">
-                <p className="text-sm uppercase opacity-60">
-                  {agent.capability} agent
+              <p className="kicker">{agent.capability} agent</p>
+
+              <h2>{agent.label}</h2>
+
+              <p className="mono" style={{ color: "var(--green)" }}>
+                {agent.name}
+              </p>
+
+              {agent.agentId && (
+                <p className="mono muted">agentId: {agent.agentId}</p>
+              )}
+
+              <p className="muted">{agent.description}</p>
+
+              {(agent.tag1 || agent.tag2) && (
+                <div className="tags">
+                  {agent.tag1 && <span className="tag">tag1: {agent.tag1}</span>}
+                  {agent.tag2 && <span className="tag">tag2: {agent.tag2}</span>}
+                </div>
+              )}
+
+              {typeof agent.avgScore !== "undefined" && (
+                <div className="stack" style={{ gap: 2, fontSize: 13 }}>
+                  <p>Average score: {agent.avgScore ?? "No score yet"}</p>
+                  <p>Unique clients: {agent.uniqueClients ?? 0}</p>
+                  <p>Feedback count: {agent.feedbackCount ?? 0}</p>
+                  {agent.heartbeatStatus && (
+                    <p>Heartbeat: {agent.heartbeatStatus}</p>
+                  )}
+                </div>
+              )}
+
+              <p className={modeClass(agent.expectedMode)}>
+                {agent.expectedMode}
+              </p>
+
+              {agent.checkoutReason && (
+                <p className="muted" style={{ fontSize: 12 }}>
+                  reason: {agent.checkoutReason}
                 </p>
-
-                <h2 className="text-xl font-semibold">{agent.label}</h2>
-
-                <p className="font-mono text-sm break-all">{agent.name}</p>
-
-                {agent.agentId && (
-                  <p className="text-sm font-mono">agentId: {agent.agentId}</p>
-                )}
-
-                <p className="text-sm opacity-80">{agent.description}</p>
-
-                {(agent.tag1 || agent.tag2) && (
-                  <div className="flex flex-wrap gap-2">
-                    {agent.tag1 && (
-                      <span className="text-xs rounded-full border px-3 py-1">
-                        tag1: {agent.tag1}
-                      </span>
-                    )}
-                    {agent.tag2 && (
-                      <span className="text-xs rounded-full border px-3 py-1">
-                        tag2: {agent.tag2}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {typeof agent.avgScore !== "undefined" && (
-                  <div className="text-sm space-y-1">
-                    <p>Average score: {agent.avgScore ?? "No score yet"}</p>
-                    <p>Unique clients: {agent.uniqueClients ?? 0}</p>
-                    <p>Feedback count: {agent.feedbackCount ?? 0}</p>
-                    {agent.heartbeatStatus && (
-                      <p>Heartbeat: {agent.heartbeatStatus}</p>
-                    )}
-                  </div>
-                )}
-
-                <p className="text-xs rounded-full border inline-block px-3 py-1">
-                  Mode: {agent.expectedMode}
-                </p>
-
-                {agent.checkoutReason && (
-                  <p className="text-xs opacity-70">
-                    Reason: {agent.checkoutReason}
-                  </p>
-                )}
-              </div>
+              )}
             </Link>
           ))}
         </div>

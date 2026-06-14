@@ -12,7 +12,10 @@ export type PaymentIntent = {
   payer: string;
   checkoutName: string;
   paymentAddress: string;
+  agentTreasury?: string;
   privateKeyDevOnly?: string;
+  settlementStatus?: "not-started" | "settled" | "failed";
+  settlementTxHash?: string;
   status: PaymentIntentStatus;
   createdAt: string;
   expiresAt: string;
