@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "audit.shadowens-demo.eth",
+    "agentId": "34563",
+    "reviewerLabel": "Wallet E",
+    "capability": "audit",
+    "score": 93,
+    "scoreValue": "9300",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "agent-evaluation",
+    "endpoint": "https://shadowens.vercel.app/agent/audit.shadowens-demo.eth",
+    "comment": "Wallet E confirmed the audit agent has strong enough reputation and activity for checkout access.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }
