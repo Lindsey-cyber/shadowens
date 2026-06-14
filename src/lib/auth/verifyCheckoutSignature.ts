@@ -1,6 +1,7 @@
 import { getAddress, verifyMessage } from "viem";
 import { getCheckoutNonce, markCheckoutNonceUsed } from "./nonceStore";
 import { buildCheckoutMessage } from "./checkoutMessage";
+import { CHECKOUT_CHAIN_ID } from "@/lib/payments/constants";
 
 export async function verifyCheckoutSignature(input: {
   appUrl: string;
@@ -41,8 +42,8 @@ export async function verifyCheckoutSignature(input: {
     return { ok: false as const, error: "nonce-timestamp-mismatch" };
   }
 
-  const expectedChainId = Number(process.env.NEXT_PUBLIC_BASE_CHAIN_ID ?? "8453");
-
+  const expectedChainId = CHECKOUT_CHAIN_ID;
+  
   if (input.chainId !== expectedChainId) {
     return { ok: false as const, error: "invalid-chainId" };
   }

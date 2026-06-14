@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { getAddress } from "viem";
 
 import { computeCheckoutMode } from "@/lib/ens/checkoutMode";
 import { computeHeartbeatStatus } from "@/lib/ens/heartbeat";
 import { resolveEnsAgent } from "@/lib/ens/resolveAgent";
 import { createEphemeralAddress } from "@/lib/payments/createEphemeralAddress";
-import { saveIntent } from "@/lib/payments/intentStore";
-import { getMockReputation } from "@/lib/reputation/mock";
+import { buildCheckoutName } from "@/lib/payments/checkoutName";
+import { savePaymentIntent } from "@/lib/storage/intents";
+import { getBigQueryReputation } from "@/lib/reputation/bigquery";
 import { verifyCheckoutSignature } from "@/lib/auth/verifyCheckoutSignature";
+import {
+  CHECKOUT_CHAIN_ID,
+  DEFAULT_PAYMENT_AMOUNT,
+  DEFAULT_PAYMENT_TOKEN,
+} from "@/lib/payments/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const DEFAULT_BUYER_WALLET =
+  "0x056ff64607a69d46a44da451B7e79DA246048a8A";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
   const ensName = String(body.ensName ?? "").trim();
-  const amount = String(body.amount ?? "").trim();
-  const token = String(body.token ?? "USDC").trim();
-  const chainId = Number(body.chainId ?? 8453);
+  const amount = String(body.amount ?? DEFAULT_PAYMENT_AMOUNT).trim();
+  const token = String(body.token ?? DEFAULT_PAYMENT_TOKEN).trim();
+  const chainId = Number(body.chainId ?? CHECKOUT_CHAIN_ID);
 
   const payer = body.payer as `0x${string}` | undefined;
   const nonce = String(body.nonce ?? "");
@@ -40,9 +50,60 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!Number.isFinite(chainId)) {
+  if (chainId !== CHECKOUT_CHAIN_ID) {
     return NextResponse.json(
-      { ok: false, error: "invalid-chainId" },
+      {
+        ok: false,
+        error: "invalid-chainId",
+        expectedChainId: CHECKOUT_CHAIN_ID,
+        receivedChainId: chainId,
+      },
+      { status: 400 }
+    );
+  }
+
+  if (amount !== DEFAULT_PAYMENT_AMOUNT) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid-amount",
+        expectedAmount: DEFAULT_PAYMENT_AMOUNT,
+        receivedAmount: amount,
+      },
+      { status: 400 }
+    );
+  }
+
+  if (token !== DEFAULT_PAYMENT_TOKEN) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid-token",
+        expectedToken: DEFAULT_PAYMENT_TOKEN,
+        receivedToken: token,
+      },
+      { status: 400 }
+    );
+  }
+
+  const allowedPayer =
+    process.env.NEXT_PUBLIC_ALLOWED_PAYER_ADDRESS ?? DEFAULT_BUYER_WALLET;
+
+  try {
+    if (getAddress(payer) !== getAddress(allowedPayer as `0x${string}`)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "payer-not-allowed",
+          expectedPayer: allowedPayer,
+          receivedPayer: payer,
+        },
+        { status: 403 }
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "invalid-payer-address" },
       { status: 400 }
     );
   }
@@ -82,7 +143,8 @@ export async function POST(req: NextRequest) {
   });
 
   const agentId = resolved.records.agentContext.registry.agentId;
-  const reputation = getMockReputation(agentId);
+
+  const reputation = await getBigQueryReputation(agentId);
 
   const checkoutMode = computeCheckoutMode({
     heartbeatAllowed: heartbeat.checkoutAllowed,
@@ -114,14 +176,18 @@ export async function POST(req: NextRequest) {
   );
   const intentExpiresAt = new Date(now.getTime() + intentTtlSeconds * 1000);
 
-  const intent = saveIntent({
-    intentId: `pay_${randomUUID()}`,
+  const intentId = `pay_${randomUUID()}`;
+  const checkoutName = buildCheckoutName(intentId, ensName);
+
+  const intent = await savePaymentIntent({
+    intentId,
     ensName,
     agentId,
     amount,
     token,
     chainId,
     payer: sigCheck.payer,
+    checkoutName,
     paymentAddress: ephemeral.address,
     privateKeyDevOnly: ephemeral.privateKey,
     status: "pending",
@@ -139,10 +205,14 @@ export async function POST(req: NextRequest) {
       token: intent.token,
       chainId: intent.chainId,
       payer: intent.payer,
+      checkoutName: intent.checkoutName,
       paymentAddress: intent.paymentAddress,
       status: intent.status,
       createdAt: intent.createdAt,
       expiresAt: intent.expiresAt,
     },
+    checkoutMode,
+    reputation,
+    heartbeat,
   });
 }

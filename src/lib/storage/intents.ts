@@ -10,6 +10,7 @@ export type PaymentIntent = {
   token: string;
   chainId: number;
   payer: string;
+  checkoutName: string;
   paymentAddress: string;
   privateKeyDevOnly?: string;
   status: PaymentIntentStatus;
@@ -19,15 +20,48 @@ export type PaymentIntent = {
   paidAt?: string;
 };
 
-const key = (intentId: string) => `intent:${intentId}`;
+const memoryIntents = new Map<string, PaymentIntent>();
+const memoryCheckoutIndex = new Map<string, string>();
+
+const intentKey = (intentId: string) => `intent:${intentId}`;
+const checkoutKey = (checkoutName: string) => `checkout:${checkoutName}`;
+
+function hasKv() {
+  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+}
 
 export async function savePaymentIntent(intent: PaymentIntent) {
-  await kv.set(key(intent.intentId), intent);
+  if (hasKv()) {
+    await kv.set(intentKey(intent.intentId), intent);
+    await kv.set(checkoutKey(intent.checkoutName), intent.intentId);
+    return intent;
+  }
+
+  memoryIntents.set(intent.intentId, intent);
+  memoryCheckoutIndex.set(intent.checkoutName, intent.intentId);
+
   return intent;
 }
 
 export async function getPaymentIntent(intentId: string) {
-  return await kv.get<PaymentIntent>(key(intentId));
+  if (hasKv()) {
+    return await kv.get<PaymentIntent>(intentKey(intentId));
+  }
+
+  return memoryIntents.get(intentId) ?? null;
+}
+
+export async function getPaymentIntentByCheckoutName(checkoutName: string) {
+  if (hasKv()) {
+    const intentId = await kv.get<string>(checkoutKey(checkoutName));
+    if (!intentId) return null;
+    return await getPaymentIntent(intentId);
+  }
+
+  const intentId = memoryCheckoutIndex.get(checkoutName);
+  if (!intentId) return null;
+
+  return memoryIntents.get(intentId) ?? null;
 }
 
 export async function updatePaymentIntent(
@@ -43,6 +77,21 @@ export async function updatePaymentIntent(
     ...patch,
   };
 
-  await kv.set(key(intentId), updated);
+  if (hasKv()) {
+    await kv.set(intentKey(intentId), updated);
+
+    if (updated.checkoutName) {
+      await kv.set(checkoutKey(updated.checkoutName), intentId);
+    }
+
+    return updated;
+  }
+
+  memoryIntents.set(intentId, updated);
+
+  if (updated.checkoutName) {
+    memoryCheckoutIndex.set(updated.checkoutName, intentId);
+  }
+
   return updated;
 }

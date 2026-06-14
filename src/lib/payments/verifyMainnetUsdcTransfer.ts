@@ -15,9 +15,21 @@ export async function verifyMainnetUsdcTransfer(input: {
   expectedTo: `0x${string}`;
   expectedAmount: string;
 }) {
-  const receipt = await mainnetClient.getTransactionReceipt({
-    hash: input.txHash,
-  });
+  let receipt;
+
+  try {
+    receipt = await mainnetClient.waitForTransactionReceipt({
+      hash: input.txHash,
+      confirmations: 1,
+      timeout: 120_000,
+    });
+  } catch (error) {
+    return {
+      ok: false as const,
+      error: "receipt-not-ready-or-timeout",
+      message: error instanceof Error ? error.message : "unknown-error",
+    };
+  }
 
   if (receipt.status !== "success") {
     return {
