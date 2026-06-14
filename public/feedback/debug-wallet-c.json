@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "debug.shadowens-demo.eth",
+    "agentId": "34564",
+    "reviewerLabel": "Wallet C",
+    "capability": "audit",
+    "score": 72,
+    "scoreValue": "7200",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "safety",
+    "endpoint": "https://shadowens.vercel.app/agent/debug.shadowens-demo.eth",
+    "comment": "Wallet C reviewed this debug agent as an audit-category candidate, but its reliability is not strong enough for direct private checkout.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }

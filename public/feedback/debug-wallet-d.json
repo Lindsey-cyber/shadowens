@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "debug.shadowens-demo.eth",
+    "agentId": "34564",
+    "reviewerLabel": "Wallet D",
+    "capability": "audit",
+    "score": 74,
+    "scoreValue": "7400",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "safety",
+    "endpoint": "https://shadowens.vercel.app/agent/debug.shadowens-demo.eth",
+    "comment": "Wallet D confirmed that this debug agent appears in the audit search category, but should require human review before payment.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }

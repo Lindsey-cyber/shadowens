@@ -8,7 +8,7 @@
     "scoreValue": "9700",
     "scoreDecimals": 2,
     "tag1": "audit",
-    "tag2": "agent-evaluation",
+    "tag2": "security",
     "endpoint": "https://shadowens.vercel.app/agent/audit.shadowens-demo.eth",
     "comment": "Wallet D independently verified this audit agent as reliable and suitable for direct private checkout.",
     "createdAt": "2026-06-14T00:00:00.000Z"

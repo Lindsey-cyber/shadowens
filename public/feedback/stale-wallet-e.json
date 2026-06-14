@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "stale.shadowens-demo.eth",
+    "agentId": "34565",
+    "reviewerLabel": "Wallet E",
+    "capability": "audit",
+    "score": 99,
+    "scoreValue": "9900",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "agent-evaluation",
+    "endpoint": "https://shadowens.vercel.app/agent/stale.shadowens-demo.eth",
+    "comment": "Wallet E gave this stale agent a high audit reputation score, demonstrating that reputation alone is not enough when heartbeat is stale.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }

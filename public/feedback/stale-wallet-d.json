@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "stale.shadowens-demo.eth",
+    "agentId": "34565",
+    "reviewerLabel": "Wallet D",
+    "capability": "audit",
+    "score": 97,
+    "scoreValue": "9700",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "agent-evaluation",
+    "endpoint": "https://shadowens.vercel.app/agent/stale.shadowens-demo.eth",
+    "comment": "Wallet D confirmed strong historical reputation for this stale audit agent, while the heartbeat mechanism should prevent checkout.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }

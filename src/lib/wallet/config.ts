@@ -1,12 +1,12 @@
 import { createConfig, http } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { mainnet } from "wagmi/chains";
 import { injected } from "wagmi/connectors";
 
 export const walletConfig = createConfig({
-  chains: [sepolia],
+  chains: [mainnet],
   connectors: [injected()],
   transports: {
-    [sepolia.id]: http(),
+    [mainnet.id]: http(),
   },
   ssr: true,
 });

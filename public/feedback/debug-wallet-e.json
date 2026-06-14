@@ -1,0 +1,15 @@
+{
+    "schema": "shadowens.feedback.v1",
+    "agentName": "debug.shadowens-demo.eth",
+    "agentId": "34564",
+    "reviewerLabel": "Wallet E",
+    "capability": "audit",
+    "score": 76,
+    "scoreValue": "7600",
+    "scoreDecimals": 2,
+    "tag1": "audit",
+    "tag2": "safety",
+    "endpoint": "https://shadowens.vercel.app/agent/debug.shadowens-demo.eth",
+    "comment": "Wallet E reviewed this debug agent as a possible audit-related agent, but its reputation remains below the threshold for direct checkout.",
+    "createdAt": "2026-06-14T00:00:00.000Z"
+  }
