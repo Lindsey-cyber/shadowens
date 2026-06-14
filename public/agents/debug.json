@@ -2,7 +2,7 @@
     "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     "name": "Debug Agent",
     "description": "AI debugging assistant. Checkout requires reputation review if score is insufficient.",
-    "image": "<https://shadowens.vercel.app/api/badge/debug.shadowens-demo.eth.svg",
+    "image": "https://shadowens.vercel.app/api/badge/debug.shadowens-demo.eth.svg",
     "services": [
       {
         "name": "web",
