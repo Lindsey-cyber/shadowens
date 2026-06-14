@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAddress } from "viem";
 import { getPaymentIntent, updatePaymentIntent } from "@/lib/storage/intents";
-import { verifyUsdcTransfer } from "@/lib/payments/verifyUsdcTransfer";
+import { verifyMainnetUsdcTransfer } from "@/lib/payments/verifyMainnetUsdcTransfer";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const verified = await verifyUsdcTransfer({
+  const verified = await verifyMainnetUsdcTransfer({
     txHash,
     expectedFrom: intent.payer as `0x${string}`,
     expectedTo: intent.paymentAddress as `0x${string}`,

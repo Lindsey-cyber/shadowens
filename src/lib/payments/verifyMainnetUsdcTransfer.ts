@@ -1,18 +1,21 @@
 import { decodeEventLog, getAddress, parseAbiItem, parseUnits } from "viem";
-import { baseClient } from "./baseClient";
-import { BASE_USDC_ADDRESS, BASE_USDC_DECIMALS } from "./constants";
+import { mainnetClient } from "./mainnetClient";
+import {
+  MAINNET_USDC_ADDRESS,
+  MAINNET_USDC_DECIMALS,
+} from "./constants";
 
 const transferEvent = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 );
 
-export async function verifyUsdcTransfer(input: {
+export async function verifyMainnetUsdcTransfer(input: {
   txHash: `0x${string}`;
   expectedFrom: `0x${string}`;
   expectedTo: `0x${string}`;
   expectedAmount: string;
 }) {
-  const receipt = await baseClient.getTransactionReceipt({
+  const receipt = await mainnetClient.getTransactionReceipt({
     hash: input.txHash,
   });
 
@@ -26,10 +29,10 @@ export async function verifyUsdcTransfer(input: {
 
   const expectedFrom = getAddress(input.expectedFrom);
   const expectedTo = getAddress(input.expectedTo);
-  const expectedValue = parseUnits(input.expectedAmount, BASE_USDC_DECIMALS);
+  const expectedValue = parseUnits(input.expectedAmount, MAINNET_USDC_DECIMALS);
 
   for (const log of receipt.logs) {
-    if (getAddress(log.address) !== getAddress(BASE_USDC_ADDRESS)) {
+    if (getAddress(log.address) !== getAddress(MAINNET_USDC_ADDRESS)) {
       continue;
     }
 

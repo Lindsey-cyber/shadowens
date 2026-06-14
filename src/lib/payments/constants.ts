@@ -1,6 +1,12 @@
-export const BASE_CHAIN_ID = 8453;
+export const CHECKOUT_CHAIN_ID = 1;
 
-export const BASE_USDC_ADDRESS =
-  "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+export const CHECKOUT_CHAIN_NAME = "Ethereum Mainnet";
 
-export const BASE_USDC_DECIMALS = 6;
+export const MAINNET_USDC_ADDRESS =
+  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const;
+
+export const MAINNET_USDC_DECIMALS = 6;
+
+export const DEFAULT_PAYMENT_AMOUNT = "0.01";
+
+export const DEFAULT_PAYMENT_TOKEN = "USDC";

@@ -10,14 +10,16 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { base } from "wagmi/chains";
+import { mainnet } from "wagmi/chains";
 import { parseUnits } from "viem";
 
 import { buildCheckoutMessage } from "@/lib/auth/checkoutMessage";
 import { erc20Abi } from "@/lib/payments/erc20Abi";
 import {
-  BASE_USDC_ADDRESS,
-  BASE_USDC_DECIMALS,
+  DEFAULT_PAYMENT_AMOUNT,
+  DEFAULT_PAYMENT_TOKEN,
+  MAINNET_USDC_ADDRESS,
+  MAINNET_USDC_DECIMALS,
 } from "@/lib/payments/constants";
 
 type ResolveResponse = {
@@ -70,6 +72,7 @@ type PaymentIntent = {
   token: string;
   chainId: number;
   payer: string;
+  checkoutName: string;
   paymentAddress: string;
   privateKeyDevOnly?: string;
   status: "pending" | "paid" | "expired" | "failed";
@@ -93,11 +96,10 @@ type CheckoutConfirmResponse = {
   [key: string]: unknown;
 };
 
-const WALLET_B = "0xD0314CfcDC5109b87a338500245Eb6B7203F3749";
+const BUYER_WALLET = "0x056ff64607a69d46a44da451B7e79DA246048a8A";
 
-// Demo 建议用小金额。不要一开始真的转 5 USDC。
-const PAYMENT_AMOUNT = "0.01";
-const PAYMENT_TOKEN = "USDC";
+const PAYMENT_AMOUNT = DEFAULT_PAYMENT_AMOUNT;
+const PAYMENT_TOKEN = DEFAULT_PAYMENT_TOKEN;
 
 export default function AgentClient({ name }: { name: string }) {
   const { address, isConnected } = useAccount();
@@ -107,13 +109,10 @@ export default function AgentClient({ name }: { name: string }) {
   const chainId = useChainId();
   const { signMessageAsync } = useSignMessage();
 
-  const {
-    writeContractAsync,
-    isPending: isPaymentPending,
-  } = useWriteContract();
+  const { writeContractAsync, isPending: isPaymentPending } = useWriteContract();
 
-  const connectedToWalletB =
-    address?.toLowerCase() === WALLET_B.toLowerCase();
+  const connectedToBuyerWallet =
+    address?.toLowerCase() === BUYER_WALLET.toLowerCase();
 
   const [data, setData] = useState<ResolveResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,34 +125,35 @@ export default function AgentClient({ name }: { name: string }) {
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(null);
   const [paymentTxHash, setPaymentTxHash] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function run() {
-      setLoading(true);
-      setCheckoutResult(null);
-      setPaymentIntent(null);
-      setPaymentTxHash(null);
+  async function loadAgent() {
+    setLoading(true);
+    setCheckoutResult(null);
+    setPaymentIntent(null);
+    setPaymentTxHash(null);
 
-      try {
-        const res = await fetch(
-          `/api/ens/resolve?name=${encodeURIComponent(name)}`,
-          {
-            cache: "no-store",
-          }
-        );
+    try {
+      const res = await fetch(
+        `/api/ens/resolve?name=${encodeURIComponent(name)}`,
+        {
+          cache: "no-store",
+        }
+      );
 
-        const json = await res.json();
-        setData(json);
-      } catch (error) {
-        setData({
-          ok: false,
-          error: error instanceof Error ? error.message : "unknown-error",
-        });
-      } finally {
-        setLoading(false);
-      }
+      const json = await res.json();
+      setData(json);
+    } catch (error) {
+      setData({
+        ok: false,
+        error: error instanceof Error ? error.message : "unknown-error",
+      });
+    } finally {
+      setLoading(false);
     }
+  }
 
-    run();
+  useEffect(() => {
+    loadAgent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 
   async function createCheckout() {
@@ -167,32 +167,31 @@ export default function AgentClient({ name }: { name: string }) {
         setCheckoutResult({
           ok: false,
           error: "wallet-not-connected",
-          expectedWallet: WALLET_B,
+          expectedWallet: BUYER_WALLET,
         });
         return;
       }
 
-      if (!connectedToWalletB) {
+      if (!connectedToBuyerWallet) {
         setCheckoutResult({
           ok: false,
           error: "wrong-wallet-connected",
           connectedAddress: address,
-          expectedWallet: WALLET_B,
+          expectedWallet: BUYER_WALLET,
         });
         return;
       }
 
-      if (chainId !== base.id) {
+      if (chainId !== mainnet.id) {
         setCheckoutResult({
           ok: false,
           error: "wrong-chain",
           connectedChainId: chainId,
-          expectedChainId: base.id,
+          expectedChainId: mainnet.id,
         });
         return;
       }
 
-      // 1. 先从后端拿 nonce
       const nonceRes = await fetch("/api/auth/checkout-nonce", {
         method: "POST",
       });
@@ -208,25 +207,22 @@ export default function AgentClient({ name }: { name: string }) {
         return;
       }
 
-      // 2. 前端和后端必须构造完全一样的 message
       const message = buildCheckoutMessage({
         appUrl: window.location.origin,
         ensName: name,
         amount: PAYMENT_AMOUNT,
         token: PAYMENT_TOKEN,
-        chainId: base.id,
+        chainId: mainnet.id,
         payer: address,
         nonce: nonceJson.nonce,
         issuedAt: nonceJson.issuedAt,
         expiresAt: nonceJson.expiresAt,
       });
 
-      // 3. Wallet B 签名
       const signature = await signMessageAsync({
         message,
       });
 
-      // 4. 带 nonce + signature 创建 checkout
       const res = await fetch("/api/checkout/create", {
         method: "POST",
         headers: {
@@ -236,7 +232,7 @@ export default function AgentClient({ name }: { name: string }) {
           ensName: name,
           amount: PAYMENT_AMOUNT,
           token: PAYMENT_TOKEN,
-          chainId: base.id,
+          chainId: mainnet.id,
           payer: address,
           nonce: nonceJson.nonce,
           issuedAt: nonceJson.issuedAt,
@@ -283,22 +279,22 @@ export default function AgentClient({ name }: { name: string }) {
         return;
       }
 
-      if (!connectedToWalletB) {
+      if (!connectedToBuyerWallet) {
         setCheckoutResult({
           ok: false,
           error: "wrong-wallet-connected",
           connectedAddress: address,
-          expectedWallet: WALLET_B,
+          expectedWallet: BUYER_WALLET,
         });
         return;
       }
 
-      if (chainId !== base.id) {
+      if (chainId !== mainnet.id) {
         setCheckoutResult({
           ok: false,
           error: "wrong-chain",
           connectedChainId: chainId,
-          expectedChainId: base.id,
+          expectedChainId: mainnet.id,
         });
         return;
       }
@@ -312,20 +308,18 @@ export default function AgentClient({ name }: { name: string }) {
         return;
       }
 
-      // 1. Wallet B 调 Base USDC transfer
       const txHash = await writeContractAsync({
-        address: BASE_USDC_ADDRESS,
+        address: MAINNET_USDC_ADDRESS,
         abi: erc20Abi,
         functionName: "transfer",
         args: [
           paymentIntent.paymentAddress as `0x${string}`,
-          parseUnits(paymentIntent.amount, BASE_USDC_DECIMALS),
+          parseUnits(paymentIntent.amount, MAINNET_USDC_DECIMALS),
         ],
       });
 
       setPaymentTxHash(txHash);
 
-      // 2. 把 txHash 发给后端验证
       const confirmRes = await fetch("/api/checkout/confirm", {
         method: "POST",
         headers: {
@@ -399,8 +393,8 @@ export default function AgentClient({ name }: { name: string }) {
   const canCreateCheckout =
     !checkoutLoading &&
     isConnected &&
-    connectedToWalletB &&
-    chainId === base.id &&
+    connectedToBuyerWallet &&
+    chainId === mainnet.id &&
     data?.checkoutMode?.mode === "direct-private-checkout";
 
   const canPay =
@@ -408,8 +402,8 @@ export default function AgentClient({ name }: { name: string }) {
     !!paymentIntent &&
     paymentIntent.status === "pending" &&
     isConnected &&
-    connectedToWalletB &&
-    chainId === base.id;
+    connectedToBuyerWallet &&
+    chainId === mainnet.id;
 
   return (
     <main className="page">
@@ -418,38 +412,42 @@ export default function AgentClient({ name }: { name: string }) {
         <h1>{name}</h1>
 
         <div className="card" style={{ marginTop: 24 }}>
-          <h2>Wallet B</h2>
+          <h2>Buyer Wallet</h2>
 
           {!isConnected ? (
             <>
-              <p>Expected payer wallet: {WALLET_B}</p>
+              <p>Expected buyer wallet: {BUYER_WALLET}</p>
               <button
                 className="button"
                 disabled={connectPending || connectors.length === 0}
                 onClick={() => connect({ connector: connectors[0] })}
               >
-                {connectPending ? "Connecting..." : "Connect Wallet B"}
+                {connectPending ? "Connecting..." : "Connect Buyer Wallet"}
               </button>
             </>
           ) : (
             <>
               <p>Connected wallet: {address}</p>
               <p>
-                Wallet B match:{" "}
-                <span className={connectedToWalletB ? "badge" : "badge warning"}>
-                  {connectedToWalletB ? "yes" : "no"}
+                Buyer wallet match:{" "}
+                <span
+                  className={connectedToBuyerWallet ? "badge" : "badge warning"}
+                >
+                  {connectedToBuyerWallet ? "yes" : "no"}
                 </span>
               </p>
 
               <p>Connected chainId: {chainId ?? "unknown"}</p>
 
-              {chainId !== base.id ? (
+              {chainId !== mainnet.id ? (
                 <button
                   className="button"
                   disabled={switchPending}
-                  onClick={() => switchChain({ chainId: base.id })}
+                  onClick={() => switchChain({ chainId: mainnet.id })}
                 >
-                  {switchPending ? "Switching..." : "Switch to Base"}
+                  {switchPending
+                    ? "Switching..."
+                    : "Switch to Ethereum Mainnet"}
                 </button>
               ) : null}
 
@@ -476,6 +474,15 @@ export default function AgentClient({ name }: { name: string }) {
         {!loading && data?.ok && data.agent && (
           <>
             <p>{data.agent.records.agentContext.description}</p>
+
+            <button
+              className="button"
+              style={{ marginTop: 16 }}
+              disabled={loading}
+              onClick={loadAgent}
+            >
+              Refresh agent reputation / heartbeat
+            </button>
 
             <div className="grid">
               <div className="card">
@@ -516,7 +523,7 @@ export default function AgentClient({ name }: { name: string }) {
               </div>
 
               <div className="card">
-                <h2>Reputation</h2>
+                <h2>BigQuery Reputation</h2>
                 <p>Average score: {data.reputation?.avgScore ?? "N/A"}</p>
                 <p>Unique clients: {data.reputation?.uniqueClients ?? 0}</p>
                 <p>Feedback count: {data.reputation?.feedbackCount ?? 0}</p>
@@ -525,7 +532,11 @@ export default function AgentClient({ name }: { name: string }) {
               <div className="card">
                 <h2>Private Checkout</h2>
 
-                <p>Amount: {PAYMENT_AMOUNT} USDC</p>
+                <p>
+                  Amount: {PAYMENT_AMOUNT} {PAYMENT_TOKEN}
+                </p>
+                <p>Network: Ethereum Mainnet</p>
+                <p>Token contract: {MAINNET_USDC_ADDRESS}</p>
 
                 <button
                   className="button"
@@ -538,11 +549,11 @@ export default function AgentClient({ name }: { name: string }) {
                 </button>
 
                 {!isConnected ? (
-                  <p>Connect Wallet B first.</p>
-                ) : !connectedToWalletB ? (
-                  <p>Wrong wallet. Please connect Wallet B.</p>
-                ) : chainId !== base.id ? (
-                  <p>Switch to Base before checkout.</p>
+                  <p>Connect buyer wallet first.</p>
+                ) : !connectedToBuyerWallet ? (
+                  <p>Wrong wallet. Please connect the buyer wallet.</p>
+                ) : chainId !== mainnet.id ? (
+                  <p>Switch to Ethereum Mainnet before checkout.</p>
                 ) : data.checkoutMode?.mode !== "direct-private-checkout" ? (
                   <p>Checkout is not available for this agent.</p>
                 ) : null}
@@ -555,8 +566,34 @@ export default function AgentClient({ name }: { name: string }) {
 
                 <p>Intent ID: {paymentIntent.intentId}</p>
                 <p>Status: {paymentIntent.status}</p>
-                <p>Amount: {paymentIntent.amount} {paymentIntent.token}</p>
-                <p>Payment address: {paymentIntent.paymentAddress}</p>
+                <p>
+                  Amount: {paymentIntent.amount} {paymentIntent.token}
+                </p>
+
+                <div style={{ marginTop: 16 }}>
+                  <p>
+                    <strong>ENS-style checkout name:</strong>
+                  </p>
+                  <p style={{ wordBreak: "break-all" }}>
+                    {paymentIntent.checkoutName}
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <p>
+                    <strong>Resolved one-time payment address:</strong>
+                  </p>
+                  <p style={{ wordBreak: "break-all" }}>
+                    {paymentIntent.paymentAddress}
+                  </p>
+                </div>
+
+                <p style={{ marginTop: 16 }}>
+                  This checkout name is created per payment intent and resolves
+                  to a fresh payment address. The buyer does not pay the
+                  agent&apos;s permanent treasury wallet directly.
+                </p>
+
                 <p>Expires at: {paymentIntent.expiresAt}</p>
 
                 {paymentIntent.status === "pending" ? (
@@ -567,8 +604,8 @@ export default function AgentClient({ name }: { name: string }) {
                       onClick={payIntent}
                     >
                       {paymentLoading || isPaymentPending
-                        ? "Paying..."
-                        : `Pay ${paymentIntent.amount} USDC to private checkout address`}
+                        ? "Confirming Ethereum Mainnet USDC payment..."
+                        : `Pay ${paymentIntent.amount} USDC to ENS checkout address`}
                     </button>
 
                     <button
@@ -595,11 +632,15 @@ export default function AgentClient({ name }: { name: string }) {
                 ) : null}
 
                 {paymentTxHash ? (
-                  <p>Payment txHash: {paymentTxHash}</p>
+                  <p style={{ wordBreak: "break-all" }}>
+                    Payment txHash: {paymentTxHash}
+                  </p>
                 ) : null}
 
                 {paymentIntent.txHash ? (
-                  <p>Verified txHash: {paymentIntent.txHash}</p>
+                  <p style={{ wordBreak: "break-all" }}>
+                    Verified txHash: {paymentIntent.txHash}
+                  </p>
                 ) : null}
               </div>
             ) : null}
